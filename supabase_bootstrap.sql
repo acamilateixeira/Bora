@@ -1061,8 +1061,12 @@ for select using (
 
 create policy request_events_insert on request_events
 for insert with check (
-  is_org_member(org_id)
-  and actor_id = auth.uid()
+  actor_id = auth.uid()
+  and (
+    is_org_member(org_id)
+    -- An authorized driver can update a request and let its trigger record the change.
+    or (pg_trigger_depth() > 0 and is_driver_in_org(auth.uid(), org_id))
+  )
 );
 
 create policy blocks_select on blocks
