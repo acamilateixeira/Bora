@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 330" role="img" aria-labelledby="title desc">
+  <title id="title">Uma corrida, três perfis</title>
+  <desc id="desc">O passageiro solicita a corrida, a equipe de despacho distribui o atendimento e o motorista executa o trajeto.</desc>
+  <rect width="1120" height="330" rx="26" fill="#EAF3F9"/>
+  <g font-family="system-ui,-apple-system,sans-serif">
+    <text x="34" y="56" fill="#102C40" font-size="32" font-weight="750">Uma corrida, três perfis</text>
+    <g transform="translate(34 82)">
+      <rect width="328" height="214" rx="20" fill="#fff"/>
+      <circle cx="44" cy="43" r="24" fill="#DBEDFA"/>
+      <path d="M44 56s-9-11-9-16a9 9 0 1 1 18 0c0 5-9 16-9 16z" fill="none" stroke="#0F5C8C" stroke-width="2.5"/>
+      <circle cx="44" cy="40" r="3" fill="#0F5C8C"/>
+      <text x="79" y="49" fill="#0F5C8C" font-size="16" font-weight="700" letter-spacing="1">01 / PASSAGEIRO</text>
+      <text x="21" y="104" fill="#102C40" font-size="27" font-weight="750">Solicita a corrida</text>
+      <text x="21" y="145" fill="#405A6B" font-size="20">Define origem e destino</text>
+      <text x="21" y="177" fill="#405A6B" font-size="20">e acompanha o pedido.</text>
+    </g>
+    <g transform="translate(396 82)">
+      <rect width="328" height="214" rx="20" fill="#fff"/>
+      <circle cx="44" cy="43" r="24" fill="#F9EDC4"/>
+      <g fill="none" stroke="#75580E" stroke-width="2.5" stroke-linecap="round">
+        <rect x="35" y="33" width="18" height="21" rx="3"/><path d="M39 40h10m-10 6h10"/>
+      </g>
+      <text x="79" y="49" fill="#75580E" font-size="16" font-weight="700" letter-spacing="1">02 / DESPACHO</text>
+      <text x="21" y="104" fill="#102C40" font-size="27" font-weight="750">Organiza a operação</text>
+      <text x="21" y="145" fill="#405A6B" font-size="20">Aprova solicitações e</text>
+      <text x="21" y="177" fill="#405A6B" font-size="20">atribui corridas.</text>
+    </g>
+    <g transform="translate(758 82)">
+      <rect width="328" height="214" rx="20" fill="#fff"/>
+      <circle cx="44" cy="43" r="24" fill="#E6F3DA"/>
+      <g fill="none" stroke="#385E2C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M33 49v-7l4-7h14l4 7v7zm0-7h22m-18 7v3m14-3v3"/><path d="M38 46h1m10 0h1"/>
+      </g>
+      <text x="79" y="49" fill="#385E2C" font-size="16" font-weight="700" letter-spacing="1">03 / MOTORISTA</text>
+      <text x="21" y="104" fill="#102C40" font-size="27" font-weight="750">Realiza o trajeto</text>
+      <text x="21" y="145" fill="#405A6B" font-size="20">Aceita a atribuição, inicia</text>
+      <text x="21" y="177" fill="#405A6B" font-size="20">e conclui a corrida.</text>
+    </g>
+  </g>
+  <g fill="none" stroke="#0F5C8C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M370 188h18m-6-6 6 6-6 6m350-6h18m-6-6 6 6-6 6"/>
+  </g>
+</svg>

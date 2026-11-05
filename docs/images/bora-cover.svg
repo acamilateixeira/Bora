@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 400" role="img" aria-labelledby="title desc">
+  <title id="title">Bora</title>
+  <desc id="desc">Capa azul com uma rota entre dois pontos e o texto Da solicitação ao destino.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1">
+      <stop stop-color="#102C40"/>
+      <stop offset="1" stop-color="#0F5C8C"/>
+    </linearGradient>
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
+      <path d="M36 0H0V36" fill="none" stroke="#90C5E5" stroke-opacity=".14"/>
+    </pattern>
+    <clipPath id="frame"><rect width="1120" height="400" rx="32"/></clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="1120" height="400" fill="url(#bg)"/>
+    <path d="M618 0h502v400H564z" fill="#1F6081" opacity=".28"/>
+    <path d="M618 0h502v400H564z" fill="url(#grid)"/>
+    <g fill="none" stroke="#87B8D0" stroke-width="13" opacity=".22">
+      <path d="M635-20v114q0 31 31 31h472M705 430V264q0-31 31-31h409"/>
+      <path d="M924-18v97q0 29 30 29h92q26 0 26 26v280M816-20v420"/>
+      <path d="M595 322h548"/>
+    </g>
+    <path d="M690 300h109q27 0 27-27v-68q0-27 27-27h112q27 0 27-27v-49" fill="none" stroke="#102C40" stroke-opacity=".5" stroke-width="16" stroke-linecap="round"/>
+    <path d="M690 300h109q27 0 27-27v-68q0-27 27-27h112q27 0 27-27v-49" fill="none" stroke="#B5DD8F" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="690" cy="300" r="15" fill="#102C40" stroke="#B5DD8F" stroke-width="5"/>
+    <circle cx="690" cy="300" r="4" fill="#B5DD8F"/>
+    <path d="M992 114s-20-24-20-37a20 20 0 1 1 40 0c0 13-20 37-20 37z" fill="#F2BB16"/>
+    <circle cx="992" cy="77" r="7" fill="#102C40"/>
+    <g font-family="system-ui,-apple-system,sans-serif">
+      <text x="64" y="89" fill="#B5DD8F" font-size="18" font-weight="700" letter-spacing="4">MOBILIDADE ORGANIZACIONAL</text>
+      <text x="59" y="222" fill="#F7FBFF" font-size="132" font-weight="800" letter-spacing="-8">Bora</text>
+      <text x="66" y="281" fill="#F7FBFF" font-size="32" font-weight="600">Da solicitação ao destino</text>
+      <text x="67" y="337" fill="#C8E0ED" font-size="18" letter-spacing="1">REACT NATIVE  /  EXPO  /  SUPABASE</text>
+    </g>
+  </g>
+</svg>

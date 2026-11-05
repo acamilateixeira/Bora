@@ -1,0 +1,38 @@
+export const theme = {
+  colors: {
+    bg: '#F7FBFF',
+    bgAlt: '#EEF5FA',
+    surface: '#FFFFFF',
+    surfaceAlt: '#F3F7FA',
+    text: '#0F2A3A',
+    muted: '#5B7280',
+    accent: '#0F5C8C',
+    accent2: '#0F5C8C',
+    accentText: '#FFFFFF',
+    secondary: '#93BF73',
+    accent3: '#F2BB16',
+    success: '#16A34A',
+    warning: '#F59E0B',
+    danger: '#E24C4B',
+    stroke: '#D6E2EA',
+  },
+  radius: {
+    sm: 10,
+    md: 16,
+    lg: 22,
+    xl: 28,
+  },
+  spacing: {
+    xs: 8,
+    sm: 12,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  font: {
+    regular: 'SpaceGrotesk_400Regular',
+    medium: 'SpaceGrotesk_500Medium',
+    semi: 'SpaceGrotesk_600SemiBold',
+    bold: 'SpaceGrotesk_700Bold',
+  },
+};

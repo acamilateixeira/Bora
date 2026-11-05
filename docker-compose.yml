@@ -1,0 +1,14 @@
+services:
+  app:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "8081:8081"
+      - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
+    stdin_open: true
+    tty: true
+    command: sh -lc "npm install && npx expo start --tunnel --clear"
