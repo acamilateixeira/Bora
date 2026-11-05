@@ -4,12 +4,26 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-: "${DATABASE_URL:?defina DATABASE_URL}"
-psql_() { psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q "$@"; }
+: "${DATABASE_URL:?defina DATABASE_URL para um banco de testes vazio e descartável}"
+psql_() { psql -X "$DATABASE_URL" -v ON_ERROR_STOP=1 -q "$@"; }
 
-psql_ -c 'drop schema if exists public cascade' -c 'create schema public' \
-      -c 'drop schema if exists auth cascade' -c 'drop schema if exists vault cascade' \
-      -c 'drop schema if exists net cascade'
+# Recusa bancos já inicializados antes de aplicar os stubs e o schema.
+empty_database="$(psql_ -Atc "
+  select exists (select 1 from pg_namespace where nspname = 'public')
+    and not exists (
+      select 1 from pg_namespace
+      where nspname not in ('public', 'information_schema') and nspname !~ '^pg_'
+    )
+    and not exists (
+      select 1 from pg_depend
+      where refclassid = 'pg_namespace'::regclass
+        and refobjid = to_regnamespace('public')
+    );
+")"
+if [[ "$empty_database" != t ]]; then
+  echo 'Use um banco Postgres vazio e descartável para os testes.' >&2
+  exit 1
+fi
 
 psql_ -f tests/sql/00_supabase_stubs.sql
 psql_ -f supabase_schema.sql

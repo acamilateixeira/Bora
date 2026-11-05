@@ -104,7 +104,7 @@ O app fala direto com o Supabase usando a chave pública, então todas as regras
 | --- | --- |
 | `npm test` | Presença do motorista, formatação, endereço e a lógica da função `notify` |
 | `npm run typecheck` | TypeScript do app |
-| `npm run test:db` | RLS entre organizações, `set_driver_status`, expiração de presença e push, em Postgres 16 |
+| `npm run test:db` | RLS entre organizações, `set_driver_status`, expiração de presença e push, em um banco Postgres 16 vazio e descartável (`DATABASE_URL`) |
 
 O [CI](.github/workflows/ci.yml) roda esses testes e um `deno check` nas Edge Functions a cada PR. Os PRs também passam por validação de título e descrição e por revisão automática com IA.
 

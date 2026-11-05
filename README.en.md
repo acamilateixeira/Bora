@@ -102,7 +102,7 @@ The app talks to Supabase directly with the public key, so every access rule liv
 | --- | --- |
 | `npm test` | Driver presence, formatting, addresses, and the `notify` handler (`node:test`, no install needed) |
 | `npm run typecheck` | App TypeScript |
-| `npm run test:db` | Applies schema, triggers, and migrations to plain Postgres 16 with stubs for `auth`, Vault, and `pg_net`, then tests cross-tenant RLS, `set_driver_status`, presence expiry, and push |
+| `npm run test:db` | Applies schema, triggers, and migrations to a fresh disposable Postgres 16 database (`DATABASE_URL`) with stubs for `auth`, Vault, and `pg_net`, then tests cross-tenant RLS, `set_driver_status`, presence expiry, and push |
 
 [CI](.github/workflows/ci.yml) runs all of them plus `deno check` on the Edge Functions for every PR. PRs also get title/description checks and an automated AI review.
 

@@ -82,6 +82,8 @@ Ou agende a Edge Function `expire-driver-status`, que chama a mesma função com
 | `npm run typecheck` | TypeScript do app. |
 | `DATABASE_URL=… npm run test:db` | Aplica schema, push e migrações em um Postgres 16 comum, com stubs de `auth`, Vault e `pg_net`, e testa RLS entre organizações, `set_driver_status`, a expiração e o push. |
 
+Use um banco Postgres 16 vazio e descartável em `DATABASE_URL`. O comando recusa bancos já inicializados e cria os dados de teste no banco informado. Use um novo banco descartável para cada execução.
+
 O CI roda os três em cada PR, mais `deno check` nas Edge Functions.
 
 ## Diagnóstico rápido

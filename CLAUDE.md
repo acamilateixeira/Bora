@@ -8,7 +8,7 @@ O app fala direto com o Supabase usando a chave pública, então **toda regra de
 - `npm start` — Expo
 - `npm test` — testes unitários (`node:test`, sem dependências)
 - `npm run typecheck` — TypeScript do app
-- `DATABASE_URL=postgres://… npm run test:db` — schema + migrações + testes do banco em Postgres 16
+- `DATABASE_URL=postgres://… npm run test:db` — schema + migrações + testes em um banco Postgres 16 vazio e descartável
 
 ## Estrutura
 
