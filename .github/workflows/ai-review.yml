@@ -1,0 +1,80 @@
+name: Revisão por IA
+
+# Revisão automática de PR com o Claude. Comenta problemas inline e deixa um
+# resumo no PR. Não aprova nem bloqueia: a decisão continua sendo humana.
+#
+# Configuração (uma vez): Settings → Secrets and variables → Actions →
+# New repository secret → ANTHROPIC_API_KEY.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # PR de fork não recebe secrets; rascunhos não são revisados.
+    # Dependabot não recebe secrets do repositório; atualizações de dependência
+    # são validadas pelo CI (testes + composer audit).
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Chave da API não configurada
+        if: env.ANTHROPIC_API_KEY == ''
+        run: echo "::notice::Revisão por IA pulada. Crie o secret ANTHROPIC_API_KEY para ativá-la."
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        if: env.ANTHROPIC_API_KEY != ''
+        with:
+          anthropic_api_key: ${{ env.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Você está revisando um PR do Bora: app mobile em React Native/Expo com
+            backend no Supabase (Postgres com RLS, Realtime e Edge Functions em Deno).
+            Leia o CLAUDE.md e o docs/supabase.md antes de revisar.
+
+            Foque, nesta ordem:
+            1. Segurança e isolamento: tabela sem RLS, política que deixa uma
+               organização ver dados de outra, função security definer sem checar
+               auth.uid() ou sem search_path, chave de serviço no app.
+            2. Regras da corrida: transições de status de requests e assignments,
+               PIN do passageiro, disponibilidade do motorista.
+            3. Realtime: assinatura sem filtro por organização, canal não removido
+               no cleanup do useEffect, tabela nova fora da publicação.
+            4. Performance: consulta sem índice por org_id, re-render em lista grande,
+               polling onde o Realtime resolveria.
+            5. Testes: o comportamento novo tem teste em tests/unit ou tests/sql?
+
+            Regras:
+            - Comente apenas o que for relevante; não comente estilo.
+            - Cada comentário inline deve explicar o problema e sugerir a correção.
+            - Termine com um comentário de resumo com os riscos encontrados.
+            - Escreva em português.
+
+            Note: The PR branch is already checked out in the current working directory.
+
+            Use `gh pr comment` for top-level feedback.
+            Use `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`) to highlight specific code issues.
+            Only post GitHub comments - don't submit review text as messages.
+
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"

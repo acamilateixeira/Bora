@@ -8,7 +8,9 @@
 
 `React Native 0.81` · `Expo SDK 54` · `TypeScript` · `Supabase`
 
-[O problema](#o-problema) · [Rodar o app](#rodar-o-app) · [Arquitetura](#arquitetura) · [Decisões técnicas](#decisões-técnicas) · [Validar uma corrida](#validar-uma-corrida) · [Guia do Supabase](docs/supabase.md)
+[![CI](https://github.com/acamilateixeira/Bora/actions/workflows/ci.yml/badge.svg)](https://github.com/acamilateixeira/Bora/actions/workflows/ci.yml)
+
+[O problema](#o-problema) · [Rodar o app](#rodar-o-app) · [Arquitetura](#arquitetura) · [Decisões técnicas](#decisões-técnicas) · [Segurança e testes](#segurança-e-testes) · [Validar uma corrida](#validar-uma-corrida) · [Guia do Supabase](docs/supabase.md)
 
 ## O problema
 
@@ -87,6 +89,24 @@ O app restaura a sessão, identifica os vínculos da conta e abre o modo dispon�
 | [`src/lib/`](src/lib) | Cliente Supabase, presença e registro de notificações |
 | [`supabase/functions/`](supabase/functions) | Edge Functions de push e expiração de presença |
 | [`supabase_schema.sql`](supabase_schema.sql) | Estrutura do banco e políticas de acesso |
+| [`supabase/migrations/`](supabase/migrations) | Alterações do banco depois da instalação inicial |
+| [`tests/`](tests) | Testes unitários (`node:test`) e do banco (Postgres com stubs do Supabase) |
+
+## Segurança e testes
+
+O app fala direto com o Supabase usando a chave pública, então todas as regras de acesso ficam no banco.
+
+- **RLS em todas as tabelas da operação.** As políticas filtram pela organização a que o usuário pertence ou pelo próprio usuário. Funções `security definer` como `is_org_member` e `has_role` concentram essa checagem e têm `search_path` fixo.
+- **Push sem confiar no app.** O banco chama a Edge Function `notify` com um segredo guardado no Vault. A função valida o payload, envia em lotes de 100 para o Expo e remove tokens que não estão mais registrados. A lógica fica em `handler.ts`, sem dependências, e é testada sem Deno nem Supabase.
+- **Presença expirada no banco.** `expire_stale_driver_status` marca como offline o motorista sem sinal há mais de 5 minutos, o mesmo limite que o app já usa, e só a chave de serviço executa.
+
+| Comando | O que testa |
+| --- | --- |
+| `npm test` | Presença do motorista, formatação, endereço e a lógica da função `notify` |
+| `npm run typecheck` | TypeScript do app |
+| `npm run test:db` | RLS entre organizações, `set_driver_status`, expiração de presença e push, em um banco Postgres 16 vazio e descartável (`DATABASE_URL`) |
+
+O [CI](.github/workflows/ci.yml) roda esses testes e um `deno check` nas Edge Functions a cada PR. Os PRs também passam por validação de título e descrição e por revisão automática com IA.
 
 ## Rodar o app
 
@@ -110,7 +130,7 @@ cp -n .env.example .env
 
 Preencha o `.env` com a URL e a chave **publishable** ou **anon** do projeto Supabase. Variáveis `EXPO_PUBLIC_*` entram no bundle do app. Guarde a chave de serviço apenas no backend.
 
-Para começar com um banco vazio, siga o [guia do Supabase](docs/supabase.md) para aplicar o schema, criar contas de teste e habilitar o Realtime.
+Para começar com um banco vazio, siga o [guia do Supabase](docs/supabase.md) para aplicar o schema e as migrações, criar contas de teste e habilitar o Realtime.
 
 ### 3. Abra no celular ou simulador
 
@@ -118,7 +138,7 @@ Para começar com um banco vazio, siga o [guia do Supabase](docs/supabase.md) pa
 npm start
 ```
 
-Leia o QR code ou pressione `a` para Android ou `i` para iOS com o ambiente correspondente instalado. Para checar o TypeScript, execute `npx tsc --noEmit`.
+Leia o QR code ou pressione `a` para Android ou `i` para iOS com o ambiente correspondente instalado. Para checar o TypeScript, execute `npm run typecheck`.
 
 ## Validar uma corrida
 

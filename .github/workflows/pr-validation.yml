@@ -1,0 +1,75 @@
+name: Validação de PR
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    name: Título, descrição e tamanho
+    runs-on: ubuntu-latest
+    steps:
+      - name: Título segue Conventional Commits
+        uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            refactor
+            perf
+            test
+            docs
+            chore
+            ci
+            build
+
+      - name: Descrição preenchida
+        # PRs do Dependabot têm descrição gerada (changelog), sem o template.
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          missing=()
+          for section in "## O que muda" "## Por quê" "## Como testar"; do
+            grep -qF "$section" <<< "$BODY" || missing+=("$section")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Seções obrigatórias ausentes no PR: ${missing[*]}"
+            exit 1
+          fi
+          # Seção "O que muda" não pode ficar vazia (só o comentário do template).
+          content=$(awk '/## O que muda/{f=1;next}/^## /{f=0}f' <<< "$BODY" | grep -v '^<!--' | grep -v '^\s*$' || true)
+          if [ -z "$content" ]; then
+            echo "::error::Descreva o que muda neste PR."
+            exit 1
+          fi
+
+  size:
+    name: Tamanho do PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Avisar PR grande
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          changed=$(git diff --shortstat "$BASE" "$HEAD" -- . ':(exclude)package-lock.json' \
+            | awk '{print $4 + $6}')
+          changed=${changed:-0}
+          echo "Linhas alteradas (sem lock): $changed"
+          if [ "$changed" -gt 600 ]; then
+            echo "::warning::PR com $changed linhas. Considere quebrar em PRs menores para facilitar a revisão."
+            gh pr edit "$PR" --add-label "size/XL" || true
+          fi

@@ -4,9 +4,11 @@
 
 [Português](README.md) · **English**
 
+[![CI](https://github.com/acamilateixeira/Bora/actions/workflows/ci.yml/badge.svg)](https://github.com/acamilateixeira/Bora/actions/workflows/ci.yml)
+
 **A mobile ride management app built to meet a temporary need for the Municipal Government of Conceição do Mato Dentro, Minas Gerais, Brazil.** Bora records trips handled by contracted drivers and gives dispatch a view of who is eligible to work, who handled each ride, and where it went.
 
-[The problem](#the-problem) · [Stack](#technology-stack) · [Architecture](#architecture) · [Technical decisions](#technical-decisions) · [Run the app](#run-the-app) · [Verify a ride](#verify-a-ride)
+[The problem](#the-problem) · [Stack](#technology-stack) · [Architecture](#architecture) · [Technical decisions](#technical-decisions) · [Security and tests](#security-and-tests) · [Run the app](#run-the-app) · [Verify a ride](#verify-a-ride)
 
 ## The problem
 
@@ -85,6 +87,24 @@ The app restores the session, reads the account's memberships, and opens the ava
 | [`src/lib/`](src/lib) | Supabase client, driver presence, and notification registration |
 | [`supabase/functions/`](supabase/functions) | Push and presence expiration Edge Functions |
 | [`supabase_schema.sql`](supabase_schema.sql) | Database schema and access policies |
+| [`supabase/migrations/`](supabase/migrations) | Database changes after the initial install |
+| [`tests/`](tests) | Unit tests (`node:test`) and database tests (Postgres with Supabase stubs) |
+
+## Security and tests
+
+The app talks to Supabase directly with the public key, so every access rule lives in the database.
+
+- **RLS on every operational table.** Policies scope rows to the user's organization or to the user. `security definer` helpers such as `is_org_member` and `has_role` centralize the check and pin `search_path`.
+- **Push that doesn't trust the client.** The database calls the `notify` Edge Function with a secret stored in Supabase Vault. The function validates the payload, sends to Expo in batches of 100, and deletes tokens Expo reports as `DeviceNotRegistered`. Its logic lives in a dependency-free `handler.ts`, unit-tested without Deno or Supabase.
+- **Presence expiry in the database.** `expire_stale_driver_status` marks drivers offline after 5 minutes without a signal, the same threshold the app uses, and only the service key can call it.
+
+| Command | What it covers |
+| --- | --- |
+| `npm test` | Driver presence, formatting, addresses, and the `notify` handler (`node:test`, no install needed) |
+| `npm run typecheck` | App TypeScript |
+| `npm run test:db` | Applies schema, triggers, and migrations to a fresh disposable Postgres 16 database (`DATABASE_URL`) with stubs for `auth`, Vault, and `pg_net`, then tests cross-tenant RLS, `set_driver_status`, presence expiry, and push |
+
+[CI](.github/workflows/ci.yml) runs all of them plus `deno check` on the Edge Functions for every PR. PRs also get title/description checks and an automated AI review.
 
 ## Run the app
 
@@ -108,7 +128,7 @@ cp -n .env.example .env
 
 Set the Supabase URL and **publishable** or **anon** key in `.env`. The `EXPO_PUBLIC_*` variables are bundled with the app. Keep the service key on the backend.
 
-For a fresh database, apply [`supabase_schema.sql`](supabase_schema.sql) in the development project's SQL Editor. Create and confirm the four accounts below in Supabase Auth, set development passwords, and run [`supabase_seed.sql`](supabase_seed.sql). Enable the relevant Realtime tables using the [Supabase setup guide in Portuguese](docs/supabase.md#realtime).
+For a fresh database, apply [`supabase_schema.sql`](supabase_schema.sql) in the development project's SQL Editor, followed by [`supabase_push.sql`](supabase_push.sql) and the files in [`supabase/migrations/`](supabase/migrations) in order. Create and confirm the four accounts below in Supabase Auth, set development passwords, and run [`supabase_seed.sql`](supabase_seed.sql). Enable the relevant Realtime tables using the [Supabase setup guide in Portuguese](docs/supabase.md#realtime).
 
 | Test account | Role |
 | --- | --- |
@@ -123,7 +143,7 @@ For a fresh database, apply [`supabase_schema.sql`](supabase_schema.sql) in the 
 npm start
 ```
 
-Scan the QR code or press `a` for Android or `i` for iOS with the corresponding environment installed. Run `npx tsc --noEmit` in a separate terminal to check TypeScript.
+Scan the QR code or press `a` for Android or `i` for iOS with the corresponding environment installed. Run `npm run typecheck` in a separate terminal to check TypeScript.
 
 ## Verify a ride
 
