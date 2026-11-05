@@ -4,9 +4,30 @@
 
 [Português](README.md) · **English**
 
-**A mobile ride management app built to meet a temporary need for the Municipal Government of Conceição do Mato Dentro, Minas Gerais, Brazil.** Bora brings ride requests, dispatch, and trip execution into one app, with a dedicated interface for each role.
+**A mobile ride management app built to meet a temporary need for the Municipal Government of Conceição do Mato Dentro, Minas Gerais, Brazil.** Bora records trips handled by contracted drivers and gives dispatch a view of who is eligible to work, who handled each ride, and where it went.
 
-[Stack](#technology-stack) · [Architecture](#architecture) · [Technical decisions](#technical-decisions) · [Run the app](#run-the-app) · [Verify a ride](#verify-a-ride)
+[The problem](#the-problem) · [Stack](#technology-stack) · [Architecture](#architecture) · [Technical decisions](#technical-decisions) · [Run the app](#run-the-app) · [Verify a ride](#verify-a-ride)
+
+## The problem
+
+The municipality had contracted drivers to handle trips, but its staff could not reliably answer basic questions about the operation. How many rides had each driver completed? Who requested each trip, where did it go, how could staff contact the driver, and whose engagement was still active?
+
+The problem showed up **before a ride**, when dispatch needed to find and contact an eligible driver, and **after the ride**, when staff needed a record of what had been done. A driver's online status was also a different question from whether the department had approved them to take rides.
+
+## What Bora delivered
+
+| Operational question | How Bora answers it |
+| --- | --- |
+| **How many rides did each driver complete?** | The dispatch dashboard counts completed assignments by driver and department. The request history lets staff check individual rides. |
+| **Who requested the ride and where did it go?** | A request records the requester, pickup, destination, and date. The assignment links the driver to the request, and status events record progress. |
+| **How can staff contact a driver?** | Staff can search by name, phone number, or license plate and call the number on the driver's profile from the app. |
+| **Who is eligible to take a ride?** | Dispatch can review approvals and blocks by department, alongside whether the driver is online, busy, or offline. |
+
+Contract uncertainty drove the need to track eligibility. This repository records **the driver's operational membership in a department**. Legal contract terms, dates, and documents are verified through the municipality's administrative process.
+
+![Illustrated Bora dispatch view showing a completed ride, the requester and route, and the driver's profile with contact and membership information.](docs/images/bora-despacho.svg)
+
+*Illustration based on Bora's dispatch, ride, and driver screens, using fictional data.*
 
 ## One ride, three roles
 
@@ -50,8 +71,10 @@ The app restores the session, reads the account's memberships, and opens the ava
 | --- | --- |
 | **One app with three modes** | Authentication and common components live in a shared mobile codebase. Each role gets an interface for its own tasks. |
 | **Supabase as the managed backend** | Auth, Postgres, and Realtime cover the workflow without a separate application server. Organization memberships and RLS enforce data access at the database layer. |
+| **Membership separate from presence** | A driver can remain approved by a department while offline. Membership governs access, while presence helps dispatch decide who can take a ride now. |
 | **Separate `requests` and `assignments`** | A request records what the passenger needs. An assignment records which driver received it and tracks that driver's progress. |
 | **Realtime for status and assignments** | Passenger and dispatch screens can follow changes without a manual refresh. Delivery depends on the role's read policies and the tables enabled in the Realtime publication. |
+| **Count from completed assignments** | The `org_top_drivers` view counts assignments with a `finished` status. Totals come from the ride workflow and can be checked against its history. |
 | **Database RPC for driver availability** | `set_driver_status` updates current status and its history in one database operation. |
 
 | Path | Responsibility |
@@ -66,6 +89,17 @@ The app restores the session, reads the account's memberships, and opens the ava
 ## Run the app
 
 Use Node.js 22, npm, and a development Supabase project. Open the app on a device with Expo Go compatible with SDK 54, an Android emulator, or an iOS simulator. [Expo Go compatibility](https://docs.expo.dev/troubleshooting/expo-go-version-mismatch/)
+
+### 1. Clone the repository
+
+Use a GitHub account with access:
+
+```bash
+git clone https://github.com/acamilateixeira/Bora.git
+cd Bora
+```
+
+### 2. Install dependencies and configure Supabase
 
 ```bash
 npm ci
@@ -83,18 +117,19 @@ For a fresh database, apply [`supabase_schema.sql`](supabase_schema.sql) in the 
 | `dispatcher@bora.local` | Dispatch |
 | `admin@bora.local` | Administrator |
 
+### 3. Open on a phone or simulator
+
 ```bash
 npm start
-npx tsc --noEmit
 ```
 
-Scan the QR code or press `a` for Android or `i` for iOS with the corresponding environment installed. Run the TypeScript check in a separate terminal.
+Scan the QR code or press `a` for Android or `i` for iOS with the corresponding environment installed. Run `npx tsc --noEmit` in a separate terminal to check TypeScript.
 
 ## Verify a ride
 
 1. Sign in as a passenger. Select **Secretaria de Educacao**, the seeded organization, and request a ride with a new pickup and destination.
 2. Sign in as dispatch in the same organization. Approve the request and assign the test driver.
 3. Sign in as the driver. Accept the assignment and start the ride. Enter the passenger's PIN when prompted.
-4. Complete the ride and check its status as both passenger and dispatch.
+4. Complete the ride. In dispatch, check the completed request, requester, route, and driver total. Open **Motoristas** (Drivers) to find the profile and its test phone number.
 
 The [Supabase setup guide in Portuguese](docs/supabase.md) also documents optional push notifications and the presence expiration function.
