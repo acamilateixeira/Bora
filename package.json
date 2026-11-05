@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"tests/unit/*.test.ts\"",
+    "test:db": "bash tests/sql/run.sh"
   },
   "dependencies": {
     "@expo-google-fonts/space-grotesk": "^0.2.3",

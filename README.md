@@ -6,7 +6,9 @@
 
 `React Native 0.81` · `Expo SDK 54` · `TypeScript` · `Supabase`
 
-[Rodar o app](#rodar-o-app) · [Arquitetura](#arquitetura) · [Validar uma corrida](#validar-uma-corrida) · [Guia do Supabase](docs/supabase.md)
+[![CI](https://github.com/acamilateixeira/bora/actions/workflows/ci.yml/badge.svg)](https://github.com/acamilateixeira/bora/actions/workflows/ci.yml)
+
+[Rodar o app](#rodar-o-app) · [Arquitetura](#arquitetura) · [Segurança e testes](#segurança-e-testes) · [Validar uma corrida](#validar-uma-corrida) · [Guia do Supabase](docs/supabase.md) · [English](README.en.md)
 
 ## Uma corrida, três perfis
 
@@ -44,6 +46,24 @@ flowchart LR
 | [`src/lib/`](src/lib) | Cliente Supabase, presença e registro de notificações |
 | [`supabase/functions/`](supabase/functions) | Edge Functions de push e expiração de presença |
 | [`supabase_schema.sql`](supabase_schema.sql) | Estrutura do banco e políticas de acesso |
+| [`supabase/migrations/`](supabase/migrations) | Alterações do banco depois da instalação inicial |
+| [`tests/`](tests) | Testes unitários (`node:test`) e do banco (Postgres com stubs do Supabase) |
+
+## Segurança e testes
+
+Todas as regras de acesso ficam no banco, porque o app fala direto com o Supabase usando a chave pública.
+
+- **RLS em todas as tabelas da operação.** As políticas filtram pela organização a que o usuário pertence ou pelo próprio usuário. Funções `security definer` como `is_org_member` e `has_role` concentram essa checagem e têm `search_path` fixo.
+- **Mudanças de estado por função.** `set_driver_status` confere `auth.uid()`, valida o vínculo do motorista e mantém o histórico de disponibilidade em uma única transação.
+- **Push sem confiar no app.** O banco chama a Edge Function `notify` com um segredo guardado no Vault. A função valida o payload, envia em lotes de 100 para o Expo e remove tokens que não estão mais registrados.
+
+| Comando | O que testa |
+| --- | --- |
+| `npm test` | Presença do motorista, formatação, endereço e a lógica da função `notify` |
+| `npm run typecheck` | TypeScript do app |
+| `npm run test:db` | RLS entre organizações, `set_driver_status`, expiração de presença e push, em Postgres 16 |
+
+O [CI](.github/workflows/ci.yml) roda esses testes e um `deno check` nas Edge Functions a cada PR. Os PRs também passam por validação de título e descrição e por revisão automática com IA.
 
 ## Rodar o app
 
@@ -64,7 +84,7 @@ Para começar com um banco vazio, siga o [guia do Supabase](docs/supabase.md) pa
 npm start
 ```
 
-Leia o QR code ou pressione `a` para Android ou `i` para iOS com o ambiente correspondente instalado. Para checar o TypeScript, execute `npx tsc --noEmit`.
+Leia o QR code ou pressione `a` para Android ou `i` para iOS com o ambiente correspondente instalado. Para checar o TypeScript, execute `npm run typecheck`.
 
 ## Validar uma corrida
 

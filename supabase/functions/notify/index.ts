@@ -1,70 +1,53 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createNotifyHandler, type PushMessage, type PushTicket } from "./handler.ts";
 
-const supabaseUrl = Deno.env.get("SB_URL") ?? "";
-const serviceRoleKey = Deno.env.get("SB_SERVICE_ROLE_KEY") ?? "";
+const supabase = createClient(
+  Deno.env.get("SB_URL") ?? "",
+  Deno.env.get("SB_SERVICE_ROLE_KEY") ?? "",
+  { auth: { persistSession: false } },
+);
 
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { persistSession: false },
+const handler = createNotifyHandler({
+  secret: Deno.env.get("NOTIFY_SECRET") ?? "",
+
+  async fetchTokens(userId) {
+    const { data, error } = await supabase
+      .from("device_tokens")
+      .select("expo_token")
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row) => row.expo_token as string);
+  },
+
+  async sendPush(messages: PushMessage[]): Promise<PushTicket[]> {
+    const res = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(messages),
+    });
+    if (!res.ok) {
+      console.error("expo push failed", res.status, await res.text());
+      return messages.map(() => ({ status: "error", message: `http_${res.status}` }));
+    }
+    const body = await res.json();
+    return (body?.data ?? []) as PushTicket[];
+  },
+
+  async removeTokens(tokens) {
+    const { error } = await supabase.from("device_tokens").delete().in("expo_token", tokens);
+    if (error) console.error("failed to remove stale tokens", error.message);
+  },
 });
 
-type Payload = {
-  user_id: string;
-  title: string;
-  body: string;
-  data?: Record<string, unknown>;
-};
-
-async function sendExpoPush(tokens: string[], payload: Payload) {
-  if (tokens.length === 0) return;
-
-  const messages = tokens.map((token) => ({
-    to: token,
-    title: payload.title,
-    body: payload.body,
-    data: payload.data ?? {},
-  }));
-
-  // Expo push API limit is 100 messages per request
-  const chunks: typeof messages[] = [];
-  for (let i = 0; i < messages.length; i += 100) {
-    chunks.push(messages.slice(i, i + 100));
-  }
-
-  for (const chunk of chunks) {
-    await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(chunk),
+serve(async (req) => {
+  try {
+    return await handler(req);
+  } catch (err) {
+    console.error("notify failed", err instanceof Error ? err.message : err);
+    return new Response(JSON.stringify({ error: "internal_error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
     });
   }
-}
-
-serve(async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
-  const payload = (await req.json()) as Payload;
-  if (!payload?.user_id || !payload?.title || !payload?.body) {
-    return new Response("Invalid payload", { status: 400 });
-  }
-
-  const { data, error } = await supabase
-    .from("device_tokens")
-    .select("expo_token")
-    .eq("user_id", payload.user_id);
-
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
-
-  const tokens = (data || []).map((t) => t.expo_token);
-  await sendExpoPush(tokens, payload);
-
-  return new Response(JSON.stringify({ sent: tokens.length }), {
-    headers: { "Content-Type": "application/json" },
-  });
 });
