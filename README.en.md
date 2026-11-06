@@ -153,3 +153,7 @@ Scan the QR code or press `a` for Android or `i` for iOS with the corresponding 
 4. Complete the ride. In dispatch, check the completed request, requester, route, and driver total. Open **Motoristas** (Drivers) to find the profile and its test phone number.
 
 The [Supabase setup guide in Portuguese](docs/supabase.md) also documents optional push notifications and the presence expiration function.
+
+## Postman, Insomnia, and verification
+
+Import the [Bora collection](docs/postman.collection.json) into Postman or Insomnia. Set `baseUrl`, `supabaseKey`, `demoEmail`, `demoPassword`, and `otherOrgId` using a development project and a demo account with no membership in the other organization. The collection signs in and reads trip records. Use the app walkthrough for the dispatch flow and `npm run test:db` for the RLS suite.

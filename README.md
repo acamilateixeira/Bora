@@ -148,3 +148,7 @@ Leia o QR code ou pressione `a` para Android ou `i` para iOS com o ambiente corr
 4. Finalize a corrida. No despacho, confira a solicitação finalizada, o solicitante, o trajeto e a contagem do motorista. Na aba **Motoristas**, localize o cadastro e confira o telefone de teste.
 
 O [guia do Supabase](docs/supabase.md) lista as contas fictícias e as dependências para testar Realtime e notificações separadamente.
+
+## Postman, Insomnia e verificação
+
+Importe a [coleção Bora](docs/postman.collection.json) no Postman ou Insomnia. Preencha `baseUrl`, `supabaseKey`, `demoEmail`, `demoPassword` e `otherOrgId` usando o projeto de desenvolvimento e uma conta fictícia sem acesso à outra organização. O fluxo autentica e faz duas leituras de corridas. Use o roteiro no app para validar o despacho completo e `npm run test:db` para a suíte de RLS.

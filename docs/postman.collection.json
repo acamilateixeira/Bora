@@ -1,0 +1,130 @@
+{
+  "info": {
+    "name": "Bora — Supabase read-only smoke",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://YOUR-DEV-PROJECT.supabase.co"
+    },
+    {
+      "key": "supabaseKey",
+      "value": ""
+    },
+    {
+      "key": "demoEmail",
+      "value": ""
+    },
+    {
+      "key": "demoPassword",
+      "value": ""
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "otherOrgId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Sign in as a demo user",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/v1/token?grant_type=password",
+        "header": [
+          {
+            "key": "apikey",
+            "value": "{{supabaseKey}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{demoEmail}}\", \"password\": \"{{demoPassword}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('accessToken', pm.response.json().access_token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Read RLS-scoped trips",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/rest/v1/requests?select=id,org_id,status&limit=5",
+        "header": [
+          {
+            "key": "apikey",
+            "value": "{{supabaseKey}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Trip rows returned as an array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Check that another organization is hidden",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/rest/v1/requests?select=id&org_id=eq.{{otherOrgId}}",
+        "header": [
+          {
+            "key": "apikey",
+            "value": "{{supabaseKey}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('No rows from the other organization', () => pm.expect(pm.response.json()).to.eql([]));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
