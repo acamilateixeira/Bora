@@ -2,7 +2,7 @@
 
 # Bora
 
-**Português** · [English](README.en.md)
+**Português** · [English](README.en.md) · **[Ver as regras ao vivo](https://acamilateixeira.github.io/Bora/?lang=pt)**
 
 **App mobile de gestão de corridas criado para atender uma necessidade temporária da Prefeitura de Conceição do Mato Dentro, em Minas Gerais.** O Bora registra o trabalho dos motoristas contratados e dá à equipe de despacho uma visão de quem está apto a atender, quem fez cada corrida e para onde ela foi.
 
@@ -107,6 +107,12 @@ O app fala direto com o Supabase usando a chave pública, então todas as regras
 | `npm run test:db` | RLS entre organizações, `set_driver_status`, expiração de presença e push, em um banco Postgres 16 vazio e descartável (`DATABASE_URL`) |
 
 O [CI](.github/workflows/ci.yml) roda esses testes e um `deno check` nas Edge Functions a cada PR. Os PRs também passam por validação de título e descrição e por revisão automática com IA.
+
+## Ver as regras funcionando, sem instalar nada
+
+A [demo no navegador](https://acamilateixeira.github.io/Bora/?lang=pt) carrega `supabase_schema.sql`, `supabase_push.sql`, as migrações e o seed em um Postgres compilado para WebAssembly ([PGlite](https://pglite.dev)). Cada passo roda como passageiro, despacho ou motorista, com a RLS e as funções `security definer` valendo: pedir corrida na própria secretaria e ser recusado na outra, aprovar e atribuir, receber a notificação, mudar a disponibilidade e ver o que o app não consegue executar. Há também uma caixa para escrever SQL e rodar como qualquer uma das pessoas.
+
+Os cenários ficam em [`demo/scenarios.mjs`](demo/scenarios.mjs). O CI roda os mesmos cenários contra Postgres 16 e contra o PGlite antes de publicar a página.
 
 ## Rodar o app
 

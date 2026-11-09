@@ -63,3 +63,32 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno check supabase/functions/*/index.ts
+
+  demo:
+    name: Demo no navegador (Postgres 16 e PGlite)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cenários contra Postgres 16
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c 'create database demo'
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/demo node demo/check-postgres.mjs
+      - name: Cenários no PGlite (o mesmo motor da página)
+        run: |
+          version=$(node -e "import('./demo/engine.mjs').then(m => console.log(m.PGLITE_VERSION))")
+          npm install --prefix "$RUNNER_TEMP/pglite" --no-audit --no-fund "@electric-sql/pglite@$version"
+          PGLITE="$RUNNER_TEMP/pglite/node_modules/@electric-sql/pglite/dist/index.js" node demo/smoke-pglite.mjs
