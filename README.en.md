@@ -2,7 +2,7 @@
 
 # Bora
 
-[Português](README.md) · **English**
+[Português](README.md) · **English** · **[See the rules live](https://acamilateixeira.github.io/Bora/?lang=en)**
 
 [![CI](https://github.com/acamilateixeira/Bora/actions/workflows/ci.yml/badge.svg)](https://github.com/acamilateixeira/Bora/actions/workflows/ci.yml)
 
@@ -105,6 +105,12 @@ The app talks to Supabase directly with the public key, so every access rule liv
 | `npm run test:db` | Applies schema, triggers, and migrations to a fresh disposable Postgres 16 database (`DATABASE_URL`) with stubs for `auth`, Vault, and `pg_net`, then tests cross-tenant RLS, `set_driver_status`, presence expiry, and push |
 
 [CI](.github/workflows/ci.yml) runs all of them plus `deno check` on the Edge Functions for every PR. PRs also get title/description checks and an automated AI review.
+
+## See the rules working, with nothing to install
+
+The [in-browser demo](https://acamilateixeira.github.io/Bora/?lang=en) loads `supabase_schema.sql`, `supabase_push.sql`, the migrations, and the seed into Postgres compiled to WebAssembly ([PGlite](https://pglite.dev)). Each step runs as a rider, dispatcher, or driver with RLS and the `security definer` functions in force: request a ride in your own department and get refused in another, approve and assign, receive the notification, change availability, and see what the app is not allowed to run. A SQL box lets you run your own query as any of those people.
+
+The scenarios live in [`demo/scenarios.mjs`](demo/scenarios.mjs). CI runs the same scenarios against Postgres 16 and against PGlite before publishing the page.
 
 ## Run the app
 

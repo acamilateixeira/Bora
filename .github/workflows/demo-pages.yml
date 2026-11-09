@@ -1,0 +1,48 @@
+name: Demo (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cenários no PGlite antes de publicar
+        run: |
+          version=$(node -e "import('./demo/engine.mjs').then(m => console.log(m.PGLITE_VERSION))")
+          npm install --prefix "$RUNNER_TEMP/pglite" --no-audit --no-fund "@electric-sql/pglite@$version"
+          PGLITE="$RUNNER_TEMP/pglite/node_modules/@electric-sql/pglite/dist/index.js" node demo/smoke-pglite.mjs
+      - name: Montar a página com o SQL do repositório
+        run: |
+          mkdir -p _site/tests/sql _site/supabase/migrations
+          cp demo/index.html demo/engine.mjs demo/scenarios.mjs _site/
+          cp supabase_schema.sql supabase_push.sql supabase_seed.sql _site/
+          cp tests/sql/00_supabase_stubs.sql _site/tests/sql/
+          cp supabase/migrations/*.sql _site/supabase/migrations/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
