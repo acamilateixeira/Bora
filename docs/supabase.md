@@ -42,6 +42,7 @@ Mudanças em um banco que já tem dados entram como arquivos em [`supabase/migra
 | --- | --- |
 | `20261105120000_secure_notify.sql` | O banco chama a função `notify` com um segredo do Vault, e não mais com a chave anon. Os gatilhos de push passam a rodar como `security definer` e o app não consegue chamar `notify_user` direto. |
 | `20261105120100_expire_stale_driver_status.sql` | Cria `expire_stale_driver_status`, que marca como offline o motorista sem sinal há mais de 5 minutos e registra o período no histórico. Só a chave de serviço executa. |
+| `20261110120000_fix_assignments_insert_policy.sql` | Reescreve a política `assignments_insert`: as regras (corrida da mesma organização, aberta ou aprovada, sem bloqueio e não pedida pelo próprio motorista) passam a valer para o despacho também, e o motorista com histórico volta a conseguir aceitar corridas. Cria um índice único parcial que permite só uma atribuição ativa por corrida, inclusive com dois aceites simultâneos. Falha com instrução se o banco já tiver duplicados. |
 
 ## Notificações
 
