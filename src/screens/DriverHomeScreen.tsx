@@ -751,7 +751,11 @@ export function DriverHomeScreen() {
       .select('id, status, request_id, created_at')
       .single();
     if (insertError) {
-      if (insertError.message.includes('row-level security')) {
+      if (insertError.code === '23505') {
+        // Índice de uma atribuição ativa por corrida: outro motorista aceitou primeiro.
+        setError('Outra pessoa já aceitou essa corrida.');
+        setErrorModal('Outra pessoa já aceitou essa corrida.');
+      } else if (insertError.message.includes('row-level security')) {
         setError('Permissão negada para aceitar.');
         setErrorModal('Permissão negada para aceitar.');
       } else {

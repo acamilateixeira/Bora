@@ -806,12 +806,17 @@ export function DispatcherHomeScreen() {
       driver_id: selectedDriverId,
     });
     if (insertError) {
-      setAssignMessage(`Erro ao atribuir: ${insertError.message}`);
-      setError(insertError.message);
-    } else {
-      setAssignMessage('Motorista atribuído com sucesso.');
-      setActionToast('Motorista atribuído com sucesso.');
+      // 23505: o índice de uma atribuição ativa por corrida barrou (outra pessoa atribuiu antes).
+      const message = insertError.code === '23505' ? 'Essa corrida já está atribuída.' : `Erro ao atribuir: ${insertError.message}`;
+      setAssignMessage(message);
+      setError(message);
+      // Sem atribuição, a corrida não pode virar "assigned".
+      await loadRequests();
+      setActionBusy(false);
+      return;
     }
+    setAssignMessage('Motorista atribuído com sucesso.');
+    setActionToast('Motorista atribuído com sucesso.');
     await supabase
       .from('requests')
       .update({ status: 'assigned' })
