@@ -173,4 +173,87 @@ begin
 end $$;
 rollback;
 
+-- Atribuições (migração 20261110120000). Cenário: a corrida do seed já foi
+-- concluída e há uma corrida nova e aberta na Educação.
+\echo 'assignments: despacho não aponta atribuição para corrida de outro órgão'
+begin;
+set local test.uid = 'a0000000-0000-0000-0000-000000000002';
+create temp table saude_request on commit drop as
+  select id from requests where org_id = '22222222-2222-2222-2222-222222222222' limit 1;
+grant select on saude_request to authenticated;
+set local role authenticated;
+do $$
+begin
+  begin
+    insert into assignments (org_id, request_id, driver_id)
+    select '11111111-1111-1111-1111-111111111111', id, 'a0000000-0000-0000-0000-000000000003' from saude_request;
+    raise exception 'vazamento: despacho da Educação atribuiu corrida da Saúde';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+rollback;
+
+\echo 'assignments: despacho não coloca segundo motorista nem o passageiro na corrida'
+begin;
+set local test.uid = 'a0000000-0000-0000-0000-000000000002';
+-- admin e passageiro também viram motoristas da Educação para o teste
+insert into driver_org_membership (driver_id, org_id, status) values
+  ('a0000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'approved'),
+  ('a0000000-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'approved');
+set local role authenticated;
+do $$
+begin
+  begin
+    insert into assignments (org_id, request_id, driver_id)
+    values ('11111111-1111-1111-1111-111111111111', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'a0000000-0000-0000-0000-000000000001');
+    raise exception 'corrida ficou com dois motoristas ativos';
+  exception when insufficient_privilege or unique_violation then null;
+  end;
+  begin
+    insert into assignments (org_id, request_id, driver_id)
+    values ('11111111-1111-1111-1111-111111111111', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'a0000000-0000-0000-0000-000000000004');
+    raise exception 'passageiro virou motorista da própria corrida';
+  exception when insufficient_privilege or unique_violation then null;
+  end;
+end $$;
+rollback;
+
+\echo 'assignments: motorista com histórico aceita corrida nova'
+begin;
+set local test.uid = 'a0000000-0000-0000-0000-000000000002';
+update assignments set status = 'finished' where request_id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+update requests set status = 'done' where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+insert into requests (id, org_id, requester_id, status, pickup_lat, pickup_lng, drop_lat, drop_lng)
+values ('ffffffff-ffff-ffff-ffff-ffffffffffff', '11111111-1111-1111-1111-111111111111',
+        'a0000000-0000-0000-0000-000000000004', 'open', 0, 0, 0, 0);
+set local role authenticated;
+set local test.uid = 'a0000000-0000-0000-0000-000000000003';
+insert into assignments (org_id, request_id, driver_id, status)
+values ('11111111-1111-1111-1111-111111111111', 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+        'a0000000-0000-0000-0000-000000000003', 'accepted');
+rollback;
+
+\echo 'assignments: só uma atribuição ativa por corrida, mesmo sem a RLS'
+begin;
+-- Sem RLS (superusuário), simulando dois aceites que passaram na política ao
+-- mesmo tempo: o índice único é a última barreira.
+insert into driver_org_membership (driver_id, org_id, status)
+values ('a0000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'approved');
+do $$
+begin
+  begin
+    insert into assignments (org_id, request_id, driver_id, status)
+    values ('11111111-1111-1111-1111-111111111111', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+            'a0000000-0000-0000-0000-000000000001', 'accepted');
+    raise exception 'índice deveria impedir a segunda atribuição ativa';
+  exception when unique_violation then null;
+  end;
+  -- Depois de recusada, a corrida pode ser atribuída a outro motorista.
+  update assignments set status = 'rejected' where request_id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+  insert into assignments (org_id, request_id, driver_id, status)
+  values ('11111111-1111-1111-1111-111111111111', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+          'a0000000-0000-0000-0000-000000000001', 'accepted');
+end $$;
+rollback;
+
 \echo 'OK: todos os testes do banco passaram'

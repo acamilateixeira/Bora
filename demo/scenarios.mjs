@@ -21,6 +21,7 @@ export const SQL_FILES = [
   'supabase_push.sql',
   'supabase/migrations/20261105120000_secure_notify.sql',
   'supabase/migrations/20261105120100_expire_stale_driver_status.sql',
+  'supabase/migrations/20261110120000_fix_assignments_insert_policy.sql',
 ];
 
 /** Extensões que só existem no Supabase (pg_net) ou que o schema não usa de fato (pgcrypto). */
